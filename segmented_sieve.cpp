@@ -10,13 +10,18 @@ bool is_prime(int n) {
 }
 
 std::vector<int> standard_sieve(int n) {
+	// output vector that will contain all the found primes in the range [2,n)
 	std::vector<int> found_primes = {};
+	// each bool at index i denotes the primality of i, initially everything is set to true
 	std::vector<bool> A = std::vector<bool>(n, true);
-	A[0] = false;
-	A[1] = false;
+	A[0] = false; // 0 is not a prime
+	A[1] = false; // 1 is not a prime
 	for (int i = 2; i <= (int)std::sqrt(n); i++) {
 		// if A[i] is prime
 		if (A[i] != false) {
+			// set all of its multiples in the range to false
+			// only multiples from i*i and up need to be set, everything
+			// less than that will have been covered by other nums
 			for (int j = i*i; j < n; j += i) {
 				A[j] = false;
 			}
@@ -39,13 +44,18 @@ std::vector<int> segmented_sieve(int n) {
 	// number k has index k-(m-delta+1) = k-m+delta-1
 	// number at index i has value m-delta+1+i
 	for (int m = delta*2 - 1; m < n; m += delta) {
-		std::vector<bool> A = std::vector<bool>(delta, true);
+		// faster than std::vector<bool>, although non-standard g++ supports variable length arrays 
+		// as an extension, an alternative to this is using "new char[delta]" to allocate an array on the heap
+		char A[delta] = {};
+		for (int i = 0; i < delta; i++) A[i] = true;
+
 		int i = 0;
 		while (found_primes[i] <= (int)std::sqrt(m)) {
 			int p = found_primes[i];
-			int q = ((m-delta)/p) + 1; // one before first num in range divided by p, then ceiled
-			for (int multiple = p*q; multiple <= m; multiple += p) {
-				A[multiple-m+delta-1] = false;
+			// finds the index corresponding to the smallest multiple of p in the segment,
+			// and then incrementally mark all the multiples as non-prime
+			for (int multiple = (p - ((m-delta+1)%p))%p; multiple < delta; multiple += p) {
+				A[multiple] = false;
 			}
 			i++;
 		}
@@ -62,7 +72,6 @@ int main() {
 
 	constexpr int N = 1'000'000'000;
 	auto segmented_primes = segmented_sieve(N);
-
 	std::cout << "Num primes below " << N << " is " << segmented_primes.size() << '\n';
 
 	return 0;
